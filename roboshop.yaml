@@ -1,7 +1,7 @@
 - name: roboshop instances management
   hosts: local
   connection: local
-  become: yes
+  #become: yes
   vars:
     sg_ids:
       mongodb: sg-065ab26d1d25a0a14
