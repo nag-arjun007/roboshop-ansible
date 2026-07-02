@@ -19,7 +19,7 @@
     instance_type: t3.micro
     domain_name: arjundevops.xyz
     action: create
-  Tasks:
+  tasks:
   - name: create ec2 instance
     amazon.aws.ec2_instance:
       instance_type: "{{ instance_type }}"
@@ -29,9 +29,9 @@
       security_group_ids:
       - "{{ sg_ids[item] }}"
       - roboshop-common
-  loop: "{{ instances }}"
-  register: ec2_output
-  when: action == "create"
+    loop: "{{ instances }}"
+    register: ec2_output
+    when: action == "create"
 
   - name: print output
     debug:
