@@ -33,6 +33,62 @@
     register: ec2_output
     when: ec2_action == "create"
 
-  - name: print output
-    debug:
-      msg: "{{ ec2_output }}"  
+  # - name: print output
+  #   debug:
+  #     msg: "{{ ec2_output }}" 
+  - name: create r53 records
+    amazon.aws.route53:
+      zone: "{{ domain_name }}"
+      state: present
+      record: "{{ item.item }}.{{ domain_name }}"
+      type: A
+      ttl: 1
+      value: "{{ item.instances[0].private_ip_address }}"
+      overwrite: true
+    loop: "{{ ec2_output.results }}"
+    when: ec2_action == "create"
+
+  - name: create record for frontend
+    amazon.aws.route53:
+      zone: "{{ domain_name }}"
+      state: present
+      record: "{{ domain_name }}"
+      type: A
+      ttl: 1
+      value: "{{ item.instances.public_ip_address }}"
+      overwrite: true
+    loop: "{{ ec2_action.results }}"
+    when:
+    - item.item == "frontend"
+    - ec2_action == "create"
+
+  - name: delete r53 records
+    amazon.aws.route53:
+      state: absent
+      zone: "{{ domain_name }}"
+      record: "{{ item }}.{{ domain_name }}"
+      ttl: 1
+      type: A
+    loop: "{{ instance }}"
+    when: ec2_action == "delete"
+
+  - name: delete r53 record for frontend
+    amazon.aws.route53:
+      state: absent
+      zone: "{{ domain_name }}"
+      record: "{{ domain_name }}"
+      ttl:  1
+      type: A
+    loop: "{{ instances }}"
+    when:
+    - ec2_action == "delete"
+    - item == "rontend" 
+
+  - name: delete ec2 instances
+    amazon.aws.ec2_instances:
+      state: absent
+      name: "roboshop-{{ item }}"
+      wait: false
+      region: us-east-1
+    loop: "{{ instances }}"
+    when: ec2_action == "delete"
